@@ -1,0 +1,21 @@
+{
+  "packages": {
+    "go":         "latest",
+    "delve":      "latest",
+    "postgresql": "latest",
+    "glibcLocales": {
+      "version":   "latest",
+      "platforms": ["x86_64-linux", "aarch64-linux"]
+    }
+  },
+  "env": {
+    "GOPATH": "$PWD/go",
+    "PATH":   "$PATH:$PWD/go/bin"
+  },
+  "shell": {
+    "init_hook": [
+      "echo 'Welcome to devbox!' > /dev/null"
+    ],
+    "scripts": {}
+  }
+}
