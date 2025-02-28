@@ -13,7 +13,7 @@ func handlerUsers(s *state, cmd command) error {
 	if len(cmd.Arguments) != 0 {
 		return fmt.Errorf("usage %v", cmd.Name)
 	}
-	users, err := s.db.GetUsers(context.Background())
+	users, err := s.db.ListUsers(context.Background())
 	if err != nil {
 		return fmt.Errorf("couldn't get users: %w", err)
 	}
