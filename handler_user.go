@@ -9,6 +9,24 @@ import (
 	"github.com/rhafaelc/blog-aggregator/internal/database"
 )
 
+func handlerUsers(s *state, cmd command) error {
+	if len(cmd.Arguments) != 0 {
+		return fmt.Errorf("usage %v", cmd.Name)
+	}
+	users, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("couldn't get users: %w", err)
+	}
+	for i := 0; i < len(users); i++ {
+		if users[i].Name == s.cfg.CurrentUserName {
+			fmt.Printf("* %s (current)\n", users[i].Name)
+		} else {
+			fmt.Printf("* %s\n", users[i].Name)
+		}
+	}
+	return nil
+}
+
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.Arguments) != 1 {
 		return fmt.Errorf("usage: %v <name>", cmd.Name)
