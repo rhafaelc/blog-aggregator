@@ -1,19 +1,61 @@
-package main 
+package main
 
 import (
-	"errors"
+	"context"
 	"fmt"
+	"time"
 
+	"github.com/google/uuid"
+	"github.com/rhafaelc/blog-aggregator/internal/database"
 )
 
-func handlerLogin(s *state, cmd command) error {
-	if len(cmd.Arguments) == 0 {
-		return errors.New("the login handler expects a single argument, the username")
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.Arguments) != 1 {
+		return fmt.Errorf("usage: %v <name>", cmd.Name)
 	}
+
 	username := cmd.Arguments[0]
-	s.Config.SetUser(username)
-	fmt.Printf("username has been set: %v\n", s.Config.CurrentUserName)
+	timeNow := time.Now().UTC()
+	params := database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: timeNow,
+		UpdatedAt: timeNow,
+		Name:      username,
+	}
+	user, err := s.db.CreateUser(context.Background(), params)
+	if err != nil {
+		return fmt.Errorf("couldn't create user: %w", err)
+	}
+
+	err = s.cfg.SetUser(user.Name)
+	if err != nil {
+		return fmt.Errorf("couldn't set current user: %w", err)
+	}
+
+	fmt.Printf("user created: \n")
+	printUser(user)
 	return nil
 }
 
+func handlerLogin(s *state, cmd command) error {
+	if len(cmd.Arguments) != 1 {
+		return fmt.Errorf("usage: %s <name>", cmd.Name)
+	}
+	username := cmd.Arguments[0]
+	user, err := s.db.GetUser(context.Background(), username)
+	if err != nil {
+		return fmt.Errorf("couldn't find user: %w", err)
+	}
 
+	err = s.cfg.SetUser(user.Name)
+	if err != nil {
+		return fmt.Errorf("couldn't set current user: %w", err)
+	}
+	fmt.Printf("user switched: %v\n", s.cfg.CurrentUserName)
+	return nil
+}
+
+func printUser(user database.User) {
+	fmt.Printf(" * ID:      %v\n", user.ID)
+	fmt.Printf(" * Name:    %v\n", user.Name)
+}
