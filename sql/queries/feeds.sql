@@ -19,7 +19,8 @@ WHERE url = $1 LIMIT 1;
 
 -- name: MarkFeedFetched :exec
 UPDATE feeds
-  set last_fetched_at = updated_at
+  SET updated_at = NOW(),
+    last_fetched_at = updated_at
   WHERE id = $1;
 
 -- name: GetNextFeedToFetch :one

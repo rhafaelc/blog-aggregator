@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/rhafaelc/blog-aggregator/internal/database"
 )
 
 func handlerAggregator(s *state, cmd command) error {
@@ -27,15 +29,23 @@ func scrapeFeeds(s *state) error {
 	if err != nil {
 		return fmt.Errorf("couldn't get feed to be fetched: %w", err)
 	}
-	err = s.db.MarkFeedFetched(context.Background(), feed.ID)
+	return scrapeFeed(s.db, feed)
+}
+
+func scrapeFeed(db *database.Queries, feed database.Feed) error {
+	err := db.MarkFeedFetched(context.Background(), feed.ID)
+	if err != nil {
+		return fmt.Errorf("couldn't mark feed %s fetched: %w", feed.Name, err)
+	}
+
 	fetchedFeed, err := fetchFeed(context.Background(), feed.Url)
 	if err != nil {
-		return fmt.Errorf("couldn't get feed: %w", err)
+		return fmt.Errorf("couldn't get feed %s: %w", feed.Name, err)
 	}
 
 	for _, item := range fetchedFeed.Channel.Item {
-		fmt.Printf("Title:		%v\n", item.Title)
-		fmt.Printf("==============================\n")
+		fmt.Printf("Found post: %s\n", item.Title)
 	}
+	fmt.Printf("Feed %s collected, %v posts found", feed.Name, len(fetchedFeed.Channel.Item))
 	return nil
 }
