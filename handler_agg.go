@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/rhafaelc/blog-aggregator/internal/database"
 )
 
@@ -42,10 +45,41 @@ func scrapeFeed(db *database.Queries, feed database.Feed) error {
 	if err != nil {
 		return fmt.Errorf("couldn't get feed %s: %w", feed.Name, err)
 	}
-
 	for _, item := range fetchedFeed.Channel.Item {
-		fmt.Printf("Found post: %s\n", item.Title)
+		timeNow := time.Now().UTC()
+
+		publishedAt := sql.NullTime{}
+		if t, err := time.Parse(time.RFC1123Z, item.PubDate); err == nil {
+			publishedAt = sql.NullTime{
+				Time:  t,
+				Valid: true,
+			}
+		}
+
+		post, err := db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: timeNow,
+			UpdatedAt: timeNow,
+			Title:     item.Title,
+			Url:       item.Link,
+			Description: sql.NullString{
+				String: item.Description,
+				Valid:  true,
+			},
+			PublishedAt: publishedAt,
+			FeedID:      feed.ID,
+		})
+
+		if err != nil {
+			if strings.Contains(err.Error(), "duplicate key") {
+				continue
+			}
+			return fmt.Errorf("couldn't add post %s: %w", item.Title, err)
+		}
+
+		fmt.Printf("Found post: %s\n", post.Title)
 	}
 	fmt.Printf("Feed %s collected, %v posts found", feed.Name, len(fetchedFeed.Channel.Item))
 	return nil
 }
+
