@@ -9,15 +9,9 @@ import (
 	"github.com/rhafaelc/blog-aggregator/internal/database"
 )
 
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	if len(cmd.Arguments) != 0 {
 		return fmt.Errorf("usage %v", cmd.Name)
-	}
-	username := s.cfg.CurrentUserName
-
-	user, err := s.db.GetUser(context.Background(), username)
-	if err != nil {
-		return fmt.Errorf("couldn't get user: %w", err)
 	}
 
 	feedFollowsForUser, err := s.db.ListFeedFollowsForUser(context.Background(), user.ID)
@@ -34,18 +28,12 @@ func handlerFollowing(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.Arguments) != 1 {
 		return fmt.Errorf("usage %v <url>", cmd.Name)
 	}
 
-	username := s.cfg.CurrentUserName
 	url := cmd.Arguments[0]
-
-	user, err := s.db.GetUser(context.Background(), username)
-	if err != nil {
-		return fmt.Errorf("couldn't get user: %w", err)
-	}
 
 	feed, err := s.db.GetFeedByUrl(context.Background(), url)
 	if err != nil {
