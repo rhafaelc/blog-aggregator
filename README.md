@@ -162,7 +162,3 @@ Display a list of posts with an optional limit (default: 2).
 ```sh
 gator browse <limit (default: 2)>
 ```
-
-```
-
-```
